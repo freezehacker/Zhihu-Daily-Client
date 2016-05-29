@@ -47,6 +47,7 @@ public class CacheUtils {
         /**
          * 初始化内存缓存
          */
+        //LogUtils.log("MAX_MEMORY=" + MAX_MEMORY);
         int memory = (int)(MAX_MEMORY / 8);
         mLruCache = new LruCache<String, Bitmap>(memory) {
             @Override
@@ -89,12 +90,14 @@ public class CacheUtils {
      */
     private CacheUtils() {}
 
+
+
     /**
      * 写入内存lruCache中
      * @param key   注意这个key是原生的url，还没有经过hash的，所以要在以下几个函数里都要经过hash
      * @param bitmap
      */
-    public void dumpToMemory(String key, Bitmap bitmap) {
+    public static void dumpToMemory(String key, Bitmap bitmap) {
         String hashKey = DigesterUtils.getHash(key);
         if (mLruCache.get(hashKey) == null) {
             mLruCache.put(hashKey, bitmap);
@@ -105,8 +108,9 @@ public class CacheUtils {
      * 从内存缓存中载入
      * @param key
      */
-    public Bitmap loadFromMemory(String key) {
-        return mLruCache.get(DigesterUtils.getHash(key));
+    public static Bitmap loadFromMemory(String key) {
+        String hashKey = DigesterUtils.getHash(key);
+        return mLruCache.get(hashKey);
     }
 
     /**
@@ -115,7 +119,7 @@ public class CacheUtils {
      * @param key
      * @param bitmap
      */
-    public void dumpToDisk(String key, final Bitmap bitmap) {
+    public static void dumpToDisk(String key, final Bitmap bitmap) {
         final String hashKey = DigesterUtils.getHash(key);
         ThreadPoolUtils.getInstance().submit(new Runnable() {
             @Override
@@ -149,14 +153,16 @@ public class CacheUtils {
      * @param key
      * @return
      */
-    public Bitmap loadFromDisk(String key) {
+    public static Bitmap loadFromDisk(String key) {
         Bitmap ret = null;
         String k = DigesterUtils.getHash(key);
         DiskLruCache.Snapshot snapshot = null;
         try {
             snapshot = mDiskLruCache.get(k);
-            InputStream is = snapshot.getInputStream(0);
-            ret = BitmapFactory.decodeStream(is);
+            if (snapshot != null) {
+                InputStream is = snapshot.getInputStream(0);
+                ret = BitmapFactory.decodeStream(is);
+            }
         } catch (IOException ioe) {
             LogUtils.log(ioe.getMessage());
         }

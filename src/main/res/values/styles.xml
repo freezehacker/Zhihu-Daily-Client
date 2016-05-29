@@ -8,4 +8,14 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="NewsShow">
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:layout_marginLeft">13dp</item>
+        <item name="android:layout_marginRight">13dp</item>
+        <item name="android:lineSpacingMultiplier">1.27</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">#de000000</item>
+    </style>
+
 </resources>
