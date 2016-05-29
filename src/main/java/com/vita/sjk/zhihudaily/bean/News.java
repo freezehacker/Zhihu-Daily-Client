@@ -1,12 +1,15 @@
 package com.vita.sjk.zhihudaily.bean;
 
+import android.os.Parcelable;
+
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by sjk on 2016/5/27.
  * 新闻类，指一条新闻
  */
-public class News {
+public class News implements Serializable {
 
     /**
      * body : <div class="main-wrap content-wrap"></div>
@@ -28,8 +31,19 @@ public class News {
     private String image;
     private String share_url;
     private String ga_prefix;
+
+    /**
+     * type字段的定义参照知乎日报上面的规定，到时再补充其取值范围
+     */
     private int type;
+
+    /**
+     * id字段
+     * 个人还是用String比int更保险，虽然无论从单个还是集合上来说，效率都降低了很多
+     * 但是目前还是暂时用着int吧，毕竟数据返回的是没有双引号，默认是int
+     */
     private int id;
+
     private List<String> js;
     private List<String> images;
     private List<String> css;

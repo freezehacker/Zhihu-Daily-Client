@@ -1,5 +1,6 @@
 package com.vita.sjk.zhihudaily.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -10,6 +11,8 @@ import android.support.v7.widget.LinearLayoutCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.SparseArray;
+import android.util.SparseBooleanArray;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -20,23 +23,42 @@ import com.vita.sjk.zhihudaily.adapter.FirstAdapter;
 import com.vita.sjk.zhihudaily.api.API;
 import com.vita.sjk.zhihudaily.bean.ResponseLatest;
 import com.vita.sjk.zhihudaily.bean.Story;
+import com.vita.sjk.zhihudaily.constants.Constants;
 import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by sjk on 2016/5/27.
  */
 public class NewsListActivity extends BaseActivity {
 
+
     ProgressBar progressBar;
     SwipeRefreshLayout swipeRefreshLayout;
     RecyclerView recyclerView;
 
+
+    /**
+     * 标记是否是刚打开app
+     */
     private boolean isFirstEnter = true;
+    /**
+     * 作为adapter参数的关键的列表
+     */
     private List<Story> storyList;
+    /**
+     * RecyclerView的适配器
+     */
     private FirstAdapter adapter;
+    /**
+     * 用来记录哪些新闻（id唯一标记）已经被浏览过
+     * 浏览过的新闻，其标题会变成灰色，以提升用户体验
+     */
+    private static SparseBooleanArray newsHasRead; // Integer-->Boolean
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -45,8 +67,15 @@ public class NewsListActivity extends BaseActivity {
 
         initViews();
 
-        //testItemLayout(); // 测试
         httpGetData();
+    }
+
+    @Override
+    protected void onDestroy() {
+        /**
+         * 释放资源的操作
+         */
+        super.onDestroy();
     }
 
     private void initViews() {
@@ -152,7 +181,14 @@ public class NewsListActivity extends BaseActivity {
         adapter.setOnItemClickListener(new FirstAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View v, int position) {
-                Toast.makeText(NewsListActivity.this, "position = " + position + "\nGo to show activity!", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(NewsListActivity.this, NewsShowActivity.class);
+                /**
+                 * 只需要传新闻的id就可以了
+                 */
+                int id = storyList.get(position).getId();
+                LogUtils.log("id=" + id);
+                intent.putExtra(Constants.NEWS_ID, id);
+                startActivity(intent);
             }
         });
         recyclerView.setAdapter(adapter);

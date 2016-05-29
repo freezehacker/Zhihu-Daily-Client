@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ZhihuDaily</string>
+    <string name="app_name">News</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

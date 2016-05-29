@@ -70,6 +70,8 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
 
     /**
      * 该方法会一直调用，具体地说，哪个item被显示在屏幕上，就调用哪个item的这个回调
+     * 要设置文字的颜色，等等，比如已经浏览过了就得设置成灰色文字
+     * 而且要考虑异步回调的问题
      * @param holder
      * @param position
      */
