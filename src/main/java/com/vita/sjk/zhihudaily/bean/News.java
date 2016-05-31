@@ -41,8 +41,10 @@ public class News implements Serializable {
      * id字段
      * 个人还是用String比int更保险，虽然无论从单个还是集合上来说，效率都降低了很多
      * 但是目前还是暂时用着int吧，毕竟数据返回的是没有双引号，默认是int
+     *
+     * 更新：5月30，改为long类型
      */
-    private int id;
+    private long id;
 
     private List<String> js;
     private List<String> images;
@@ -104,11 +106,11 @@ public class News implements Serializable {
         this.type = type;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

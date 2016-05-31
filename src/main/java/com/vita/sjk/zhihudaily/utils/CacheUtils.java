@@ -19,14 +19,30 @@ import java.io.OutputStream;
 
 /**
  * Created by sjk on 2016/5/28.
+ * 本缓存暂时只针对Bitmap，不是text
  */
 public class CacheUtils {
 
-    public static final long MAX_MEMORY = Runtime.getRuntime().maxMemory();
+    /**
+     * 分配给LruCache的缓存，大概有32M
+      */
+    public static final long ALLOCATE_MEMORY = Runtime.getRuntime().maxMemory() / 8;
 
+    /**
+     * 分配给DiskLruCache的缓存，设成50M
+     */
+    public static final long ALLOCATE_DISK_MEMORY = 50 * 1024 * 1024;
+
+    /**
+     * 缓存bitmap文件的文件夹的名字
+     * 全路径为：getExternalCacheDir() / cacheDirString /
+     */
     public static final String cacheDirString = "bitmap";
 
-    public static String diskCachePathString;
+    /**
+     * 全路径，可以记录下来，待用
+     */
+    public static String diskCachePathString;   // 缓存图片的全路径
 
     /**
      * 内存缓存
@@ -40,16 +56,15 @@ public class CacheUtils {
     private static DiskLruCache mDiskLruCache;
 
     /**
-     * 初始化两个缓存
-     * 只在在Application的onCreate中调用，这样可以保证只进行一次
+     * 两个缓存的初始化
+     * 只在Application的onCreate中调用
+     * 这样可以保证只进行一次
      */
     public static void initCache() {
         /**
          * 初始化内存缓存
          */
-        //LogUtils.log("MAX_MEMORY=" + MAX_MEMORY);
-        int memory = (int)(MAX_MEMORY / 8);
-        mLruCache = new LruCache<String, Bitmap>(memory) {
+        mLruCache = new LruCache<String, Bitmap>((int)(ALLOCATE_MEMORY)) {
             @Override
             protected int sizeOf(String key, Bitmap value) {
                 return value.getByteCount();
@@ -60,7 +75,7 @@ public class CacheUtils {
          * 初始化硬盘缓存
          */
         Context context = MyApplication.getMyApplicationContext();
-        LogUtils.log("全局context=" + context);
+        //LogUtils.log("全局context=" + context);
         String dirString;
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) || !Environment.isExternalStorageRemovable()) {
             dirString = context.getExternalCacheDir().getPath();
@@ -68,7 +83,11 @@ public class CacheUtils {
             dirString = context.getCacheDir().getPath();
         }
         diskCachePathString = dirString + File.separator + cacheDirString;
+        //LogUtils.log("路径：" + diskCachePathString);
         File dir = new File(diskCachePathString);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
 
         int appVersion;
         try {
@@ -79,18 +98,17 @@ public class CacheUtils {
         }
 
         try {
-            mDiskLruCache = DiskLruCache.open(dir, appVersion, 1, (int)(MAX_MEMORY / 8));
+            mDiskLruCache = DiskLruCache.open(dir, appVersion, 1, (int)(ALLOCATE_DISK_MEMORY));
         } catch (IOException ioe) {
             LogUtils.log(ioe.getMessage());
         }
     }
 
     /**
-     * 隐藏构造函数。其实这个构造函数也不需要
+     * 隐藏构造函数
+     * 其实这个构造函数也不需要
      */
     private CacheUtils() {}
-
-
 
     /**
      * 写入内存lruCache中
@@ -169,4 +187,38 @@ public class CacheUtils {
         return ret;
     }
 
+    /**
+     * 清理磁盘的缓存
+     * worker线程
+     */
+    public static void clearDiskCache() {
+        ThreadPoolUtils.getInstance().execute(new Runnable() {
+            @Override
+            public void run() {
+                File dir = new File(diskCachePathString);
+                if (!dir.exists()) return;
+                for (File file: dir.listFiles()) {
+                    file.delete();
+                }
+            }
+        });
+    }
+
+    /**
+     * 两级缓存，取bitmap
+     * @param key
+     */
+    public static Bitmap load(String key) {
+        Bitmap bitmap = loadFromMemory(key);
+        if (bitmap != null) {
+            return bitmap;
+        } else {
+            bitmap = loadFromDisk(key);
+            if (bitmap != null) {
+                dumpToMemory(key, bitmap);
+                return bitmap;
+            }
+        }
+        return null;
+    }
 }

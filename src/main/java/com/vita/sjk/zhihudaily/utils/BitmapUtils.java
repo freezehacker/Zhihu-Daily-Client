@@ -1,10 +1,12 @@
 package com.vita.sjk.zhihudaily.utils;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.DisplayMetrics;
 
 /**
  * Created by sjk on 2016/5/29.
@@ -19,25 +21,29 @@ public class BitmapUtils {
      */
     public static Bitmap drawableToBitmap(Drawable drawable) {
         if (drawable instanceof BitmapDrawable) {
+            LogUtils.log("drawable is an instance of BitmapDrawable.");
             return ((BitmapDrawable)drawable).getBitmap();
+        } else {
+            LogUtils.log("drawable is NOT an instance of BitmapDrawable!");
+            Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicWidth(),
+                    drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
+            Canvas canvas = new Canvas();
+            canvas.setBitmap(bitmap);
+            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+            drawable.draw(canvas);  // 把drawable画到canvas即bitmap上
+            return bitmap;
         }
-
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicWidth(),
-                drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
-        Canvas canvas = new Canvas();
-        canvas.setBitmap(bitmap);
-        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-        drawable.draw(canvas);  // 把drawable画到canvas即bitmap上
-        return bitmap;
     }
 
+
     /**
-     * 虽然已经弃用了，但暂时找不到更好的办法
+     * bitmap转成drawable
+     * @param res   资源文件，要根据context获得。传入此参数是为了适配屏幕。
      * @param bitmap
      * @return
      */
-    @SuppressWarnings("Deprecated")
-    public static Drawable bitmapToDrawable(Bitmap bitmap) {
-        return new BitmapDrawable(bitmap);
+    public static Drawable bitmapToDrawable(Resources res, Bitmap bitmap) {
+        BitmapDrawable ret = new BitmapDrawable(res, bitmap);
+        return ret;
     }
 }

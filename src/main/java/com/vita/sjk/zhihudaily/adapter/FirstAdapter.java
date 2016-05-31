@@ -1,8 +1,13 @@
 package com.vita.sjk.zhihudaily.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.AsyncTask;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,9 +15,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.vita.sjk.zhihudaily.R;
+import com.vita.sjk.zhihudaily.api.API;
 import com.vita.sjk.zhihudaily.bean.Story;
+import com.vita.sjk.zhihudaily.utils.CacheUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 
+import java.net.URL;
 import java.util.List;
 import java.util.zip.Inflater;
 
@@ -21,17 +29,17 @@ import java.util.zip.Inflater;
  */
 public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHolder> {
 
-    /**
-     * RecyclerView的item点击，需要自己定义点击的回调来实现
-     */
-    public interface OnItemClickListener {
-        void onItemClick(View v, int position);
-    }
+    public static final int TAG = 1;
 
-    OnItemClickListener mOnItemClickListener;
-    List<Story> storyList;
-    int resourceId;
-    Context mContext;
+    private OnItemClickListener mOnItemClickListener;
+
+    private List<Story> storyList;
+
+    private int resourceId;
+
+    private Context mContext;
+
+    private RecyclerView mRecyclerView;
 
     /**
      * 构造器，目的是传入需要的参数（引用）
@@ -40,10 +48,11 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
      * @param rId     资源文件，确定要使用哪个item布局（其实我觉得已经是确定了的……）
      * @param inList
      */
-    public FirstAdapter(Context context, int rId, List<Story> inList) {
+    public FirstAdapter(Context context, int rId, List<Story> inList, RecyclerView recyclerView) {
         mContext = context;
         resourceId = rId;
         storyList = inList;
+        mRecyclerView = recyclerView;
     }
 
     /**
@@ -80,7 +89,35 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
         //LogUtils.log("bind " + position);
         Story story = storyList.get(position);
         holder.item_title.setText(story.getTitle());
-        //holder.item_thumbnail.setImageBitmap(bitmap);
+        /**
+         * 无论如何，刚进入屏幕的瞬间都先置为“空图片”
+         */
+        holder.item_thumbnail.setImageResource(R.drawable.no_pic);
+        /**
+         * 标记tag为url
+         * 这里有3个url可以选择：图片的url，新闻的url，新闻的id
+         * 这3个url都可以唯一标记一个新闻item对象，而新闻的id是新闻url的简化版本
+         * 而鉴于有的新闻是没有图片url的
+         * 所以，拿新闻的id作为显示封面的ImageView的TAG就最合适了
+         *
+         * 更新：setTag巨坑..
+         * Tag最好是String类型，如果是long类型，后续的findViewWithTag会找不到T_T
+         */
+        holder.item_thumbnail.setTag(String.valueOf(story.getId()));
+
+        List<String> imageStrs = story.getImages();
+        if (imageStrs != null) {
+            String imageStr = imageStrs.get(0); // 根据json字符串的格式说明，一般取第一个就可以了
+            Bitmap bitmap = CacheUtils.load(imageStr);
+            if (bitmap != null) {
+                holder.item_thumbnail.setImageBitmap(bitmap);
+            } else {
+                /**
+                 * 没有封面，就执行下载任务
+                 */
+                new ImageListTask(story.getId()).execute(imageStr);
+            }
+        }
 
         /**
          * 设置点击监听器，如果用户设置了的话
@@ -99,6 +136,67 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
     public int getItemCount() {
         return storyList.size();
     }
+
+
+    /**
+     * RecyclerView的item点击，需要自己定义点击的回调来实现
+     */
+    public interface OnItemClickListener {
+        void onItemClick(View v, int position);
+    }
+
+
+    /**
+     * RecyclerView中的列表项的图片下载任务
+     */
+    class ImageListTask extends AsyncTask<String, Integer, Bitmap> {
+
+        long news_thumbnail_id;
+        String urlString;
+
+        /**
+         * 传入一个新闻的id，来作为某张封面的tag部分
+         * @param id
+         */
+        public ImageListTask(long id) {
+            news_thumbnail_id = id;
+        }
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            urlString = params[0];
+            Bitmap ret = null;
+            try {
+                ret = BitmapFactory.decodeStream(new URL(urlString).openStream());
+                //LogUtils.log("下载完一个了");
+            } catch (Exception e) {
+
+            }
+            return ret;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            /**
+             * recyclerView.findViewWithTag找到ImageView来显示新闻封面
+             * 这样可以解决异步加载图片过程中的图片乱序的问题
+             */
+            ImageView iv =(ImageView) mRecyclerView.findViewWithTag(String.valueOf(news_thumbnail_id));
+            if (iv != null && bitmap != null) {
+                LogUtils.log("found!");
+                iv.setImageBitmap(bitmap);
+
+                /**
+                 * 下载完后记得缓存
+                 */
+                CacheUtils.dumpToMemory(urlString, bitmap);
+                CacheUtils.dumpToDisk(urlString, bitmap);
+            } else {
+                LogUtils.log("not found: " + news_thumbnail_id);
+            }
+        }
+    }
+
 
     /**
      * ViewHolder类

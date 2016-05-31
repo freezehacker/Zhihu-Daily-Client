@@ -13,6 +13,8 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -24,6 +26,7 @@ import com.vita.sjk.zhihudaily.api.API;
 import com.vita.sjk.zhihudaily.bean.ResponseLatest;
 import com.vita.sjk.zhihudaily.bean.Story;
 import com.vita.sjk.zhihudaily.constants.Constants;
+import com.vita.sjk.zhihudaily.utils.CacheUtils;
 import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 
@@ -32,13 +35,14 @@ import java.util.Map;
 
 /**
  * Created by sjk on 2016/5/27.
+ * 新闻列表
  */
 public class NewsListActivity extends BaseActivity {
 
 
-    ProgressBar progressBar;
-    SwipeRefreshLayout swipeRefreshLayout;
-    RecyclerView recyclerView;
+    private ProgressBar progressBar;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private RecyclerView recyclerView;
 
 
     /**
@@ -177,7 +181,7 @@ public class NewsListActivity extends BaseActivity {
             recyclerView.setItemAnimator(new DefaultItemAnimator());
         }
 
-        adapter = new FirstAdapter(this, R.layout.item_news_list__first, storyList);
+        adapter = new FirstAdapter(this, R.layout.item_news_list__first, storyList, recyclerView);
         adapter.setOnItemClickListener(new FirstAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View v, int position) {
@@ -185,8 +189,8 @@ public class NewsListActivity extends BaseActivity {
                 /**
                  * 只需要传新闻的id就可以了
                  */
-                int id = storyList.get(position).getId();
-                LogUtils.log("id=" + id);
+                long id = storyList.get(position).getId();
+                LogUtils.log("跳转到新闻的id=" + id);
                 intent.putExtra(Constants.NEWS_ID, id);
                 startActivity(intent);
             }
@@ -223,5 +227,21 @@ public class NewsListActivity extends BaseActivity {
      */
     private void testItemLayout() {
         // 貌似现在不需要了
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_news_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.delete_cache) {
+            Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
+            CacheUtils.clearDiskCache();
+        }
+        return true;
     }
 }
