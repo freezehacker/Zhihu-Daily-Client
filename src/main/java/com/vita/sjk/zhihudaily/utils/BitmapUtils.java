@@ -21,10 +21,10 @@ public class BitmapUtils {
      */
     public static Bitmap drawableToBitmap(Drawable drawable) {
         if (drawable instanceof BitmapDrawable) {
-            LogUtils.log("drawable is an instance of BitmapDrawable.");
+            //LogUtils.log("drawable is an instance of BitmapDrawable.");
             return ((BitmapDrawable)drawable).getBitmap();
         } else {
-            LogUtils.log("drawable is NOT an instance of BitmapDrawable!");
+            //LogUtils.log("drawable is NOT an instance of BitmapDrawable!");
             Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicWidth(),
                     drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
             Canvas canvas = new Canvas();

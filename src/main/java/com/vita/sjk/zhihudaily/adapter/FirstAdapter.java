@@ -167,6 +167,7 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
             urlString = params[0];
             Bitmap ret = null;
             try {
+                LogUtils.log("正在下载图片，url = " + urlString);
                 ret = BitmapFactory.decodeStream(new URL(urlString).openStream());
                 //LogUtils.log("下载完一个了");
             } catch (Exception e) {
@@ -183,7 +184,7 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
              */
             ImageView iv =(ImageView) mRecyclerView.findViewWithTag(String.valueOf(news_thumbnail_id));
             if (iv != null && bitmap != null) {
-                LogUtils.log("found!");
+                //LogUtils.log("found!");
                 iv.setImageBitmap(bitmap);
 
                 /**
@@ -192,7 +193,7 @@ public class FirstAdapter extends RecyclerView.Adapter<FirstAdapter.FirstViewHol
                 CacheUtils.dumpToMemory(urlString, bitmap);
                 CacheUtils.dumpToDisk(urlString, bitmap);
             } else {
-                LogUtils.log("not found: " + news_thumbnail_id);
+                //LogUtils.log("not found: " + news_thumbnail_id);
             }
         }
     }

@@ -12,6 +12,9 @@ public class MyApplication extends Application {
 
     private static Context context;
 
+    /**
+     * app启动的时候会调用一次
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -24,6 +27,10 @@ public class MyApplication extends Application {
         CacheUtils.initCache();
     }
 
+    /**
+     * 返回全局context，在app任何地方都可以访问
+     * @return
+     */
     public static Context getMyApplicationContext() {
         return context;
     }
