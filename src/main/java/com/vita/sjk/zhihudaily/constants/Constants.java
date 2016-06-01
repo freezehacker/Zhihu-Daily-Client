@@ -5,12 +5,22 @@ package com.vita.sjk.zhihudaily.constants;
  */
 public class Constants {
 
+    //----------------------------------------------------------------------------------
     /**
-     * 传过去的intent中新闻id的key
-     * 以及，失效的id的默认值，用来标记出现错误
+     * 以下的这些常量
+     * 是启动NewsShowActivity时用Intent传过去的key
+     * 以及如果传送输错的默认value
      */
-    public static final String NEWS_ID = "id";
+    public static final String NEWS_ID = "news_id";
     public static final long NEWS_ID_INVALID = -1;
+
+    public static final String NEWS_TITLE = "news_title";
+    public static final String NEWS_TITLE_INVALID = "@{null}";
+
+    public static final String NEWS_TYPE = "news_type";
+    public static final int NEWS_TYPE_INVALID = -1;
+
+    //----------------------------------------------------------------------------------
 
     /**
      * 按两次退出之间的有效间隙

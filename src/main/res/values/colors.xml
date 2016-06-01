@@ -12,4 +12,14 @@
     <color name="material_blue_500">#009688</color>
     <color name="material_blue_700">#00796B</color>
     <color name="material_green_A200">#FD87A9</color>
+
+    <color name="myColorPrimary">#607d8b</color>
+    <color name="myColorPrimaryDark">#b0bec5</color>
+    <color name="myColorAccent">#e91e63</color>
+    <color name="news_background_lighter_gray">#60bebebe</color>
+
+    <!-- 新闻标题的大块背景色 -->
+    <color name="material_red">#e51c23</color>
+    <color name="material_blue">#03a9f4</color>
+    <color name="material_green">#259b24</color>
 </resources>

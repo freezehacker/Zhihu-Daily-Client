@@ -15,4 +15,5 @@
     </string>
 
     <string name="news_list_latest">Latest</string>
+    <string name="lack">null</string>
 </resources>

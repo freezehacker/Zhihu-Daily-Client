@@ -7,6 +7,8 @@ import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Html;
@@ -17,6 +19,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
+import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -29,6 +32,7 @@ import com.vita.sjk.zhihudaily.utils.BitmapUtils;
 import com.vita.sjk.zhihudaily.utils.CacheUtils;
 import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
+import com.vita.sjk.zhihudaily.utils.RandomGenerator;
 
 import org.w3c.dom.Text;
 import org.xml.sax.XMLReader;
@@ -48,36 +52,57 @@ import java.util.Set;
  */
 public class NewsShowActivity extends BaseActivity {
 
-    ScrollView news_scroll_view;
+    CollapsingToolbarLayout news_collasping_toolbar_layout;
+    Toolbar news_toolbar;
+    NestedScrollView news_scroll_view;
     TextView news_content_text;
-    DisplayMetrics metrics;
 
     private String html_body;
     private Spanned html_spanned;
-
     private NewsImageGetter mNewsImageGetter = null;
     private NewsTagHandler mNewsTagHandler = null;
+
+    private String news_title = null;
+    private int news_type;
+    private long news_id;
+
+    private int[] bg_colors = {
+            R.color.material_red,
+            R.color.material_blue,
+            R.color.material_green
+    };
+
     /**
-     * 用Set管理下载任务是因为不能有重复的加进来
+     * 用Set管理下载任务
+     * 防止有任务重复加进来
      */
     private Set<NewsImageTask> taskSet;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_news_show);
 
+        Intent intent = getIntent();
+        news_id = intent.getLongExtra(Constants.NEWS_ID, Constants.NEWS_ID_INVALID);
+        news_type = intent.getIntExtra(Constants.NEWS_TYPE, Constants.NEWS_TYPE_INVALID);
+        news_title = intent.getStringExtra(Constants.NEWS_TITLE);
+
+        /**
+         * 姑且认为，
+         * 如果id出错了，那传输intent的信息就全失效了
+         */
+        if (news_id == Constants.NEWS_ID_INVALID) {
+            LogUtils.log("Intent携带信息出错");
+            finish();
+        }
+
         initViews();
 
         initVars();
 
-        Intent intent = getIntent();
-        long id = intent.getLongExtra(Constants.NEWS_ID, Constants.NEWS_ID_INVALID);
-        if (id == Constants.NEWS_ID_INVALID) {
-            // 传过来的新闻id不正常，处理异常
-        } else {
-            callHttpToShowNews(id);
-        }
+        callHttpToShowNews(news_id);
     }
 
     @Override
@@ -96,23 +121,42 @@ public class NewsShowActivity extends BaseActivity {
      * 初始化控件
      */
     private void initViews() {
-        //Toolbar toolbar = (Toolbar)findViewById(R.id)
+        /**
+         * 要显示标题的话，必须设置在collapsingToolbarLayout上，而不是toolBar上
+         */
+        news_collasping_toolbar_layout = (CollapsingToolbarLayout) findViewById(R.id.news_collasping_toolbar_layout);
+        news_collasping_toolbar_layout.setTitle(news_title);
 
-        metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        /**
+         * 随机设置一种颜色，感觉会好一点
+         */
+        ImageView news_block_bg = (ImageView) findViewById(R.id.news_block_bg);
+        news_block_bg.setBackgroundColor(bg_colors[RandomGenerator.getRandomInt(0, bg_colors.length)]);
+
+        /**
+         * 添加后退导航按钮（原生，不用自己找drawable定义）
+         */
+        news_toolbar = (Toolbar) findViewById(R.id.news_toolbar);
+        setSupportActionBar(news_toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        news_toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /**
+                 * 导航可以后退（一个activity）
+                 */
+                onBackPressed();
+            }
+        });
 
         news_content_text = (TextView) findViewById(R.id.news_content_text);
         news_content_text.setMovementMethod(LinkMovementMethod.getInstance());
-        news_content_text.setMovementMethod(ScrollingMovementMethod.getInstance());
-        news_scroll_view = (ScrollView) findViewById(R.id.news_scroll_view);
-        /*
-        news_scroll_view.setOnScrollChangeListener(new View.OnScrollChangeListener() {
-            @Override
-            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+        //news_content_text.setMovementMethod(ScrollingMovementMethod.getInstance());
 
-            }
-        });
-        */
+        news_scroll_view = (NestedScrollView) findViewById(R.id.news_nested_scroll_view);
+        /**
+         * 记得设置scrollvaie的滚动记录，提升用户体验
+         */
     }
 
     /**
@@ -126,7 +170,7 @@ public class NewsShowActivity extends BaseActivity {
     /**
      * 发起网络请求，请求一条新闻的内容
      *
-     * @param news_id
+     * @param news_id 新闻id
      */
     private void callHttpToShowNews(long news_id) {
         String urlString = String.format(API.GET_NEWS_BY_ID, String.valueOf(news_id));

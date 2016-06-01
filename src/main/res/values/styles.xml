@@ -11,10 +11,10 @@
         <item name="windowActionBar">false</item>
     </style>
 
-    <style name="AppThemeWithoutActionBar" parent="Theme.AppCompat.NoActionBar">
-        <item name="colorPrimary">@color/material_blue_500</item>
-        <item name="colorPrimaryDark">@color/material_blue_700</item>
-        <item name="colorAccent">@color/material_green_A200</item>
+    <style name="AppThemeWithoutActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/myColorPrimary</item>
+        <item name="colorPrimaryDark">@color/myColorPrimaryDark</item>
+        <item name="colorAccent">@color/myColorAccent</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
@@ -28,6 +28,12 @@
         <item name="android:layout_marginRight">13dp</item>
         <item name="android:lineSpacingMultiplier">1.27</item>
         <item name="android:textSize">15sp</item>
+        <item name="android:textColor">#de000000</item>
+    </style>
+
+    <style name="NewsItem">
+        <item name="android:textSize">16sp</item>
+        <item name="android:lineSpacingMultiplier">1.23</item>
         <item name="android:textColor">#de000000</item>
     </style>
 

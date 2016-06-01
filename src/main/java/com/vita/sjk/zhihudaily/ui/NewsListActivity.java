@@ -79,6 +79,9 @@ public class NewsListActivity extends BaseActivity
         bindViews();
 
         //httpRefreshData();
+        /**
+         * 进入activity就开始刷新，而且有图标
+         */
         swipeRefreshLayout.post(new Runnable() {
             @Override
             public void run() {
@@ -104,16 +107,6 @@ public class NewsListActivity extends BaseActivity
         recyclerView = (RecyclerView) findViewById(R.id.my_rv);
         toolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
-
-        toolbar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /**
-                 * RecyclerView定位到最顶端
-                 */
-                recyclerView.smoothScrollToPosition(0);
-            }
-        });
     }
 
     /**
@@ -142,6 +135,20 @@ public class NewsListActivity extends BaseActivity
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(llm);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+        /**
+         * 这里实现检测上拉(加载更多)
+         */
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+            }
+        });
 
         /**
          * toolBar
@@ -263,11 +270,18 @@ public class NewsListActivity extends BaseActivity
     public void onItemClick(View v, int position) {
         Intent intent = new Intent(NewsListActivity.this, NewsShowActivity.class);
         /**
-         * 只需要传新闻的id就可以了
+         * 在根据id搜到正文之前，可以先传递标题、类型，让NewsShowActivity事先显示，像知乎那样
          */
-        long id = storyList.get(position).getId();
+        Story story = storyList.get(position);
+        long id = story.getId();
+        String title = story.getTitle();
+        int type = story.getType();
+
         LogUtils.log("跳转到新闻的id=" + id);
         intent.putExtra(Constants.NEWS_ID, id);
+        intent.putExtra(Constants.NEWS_TITLE, title);
+        intent.putExtra(Constants.NEWS_TYPE, type);
+
         startActivity(intent);
     }
 

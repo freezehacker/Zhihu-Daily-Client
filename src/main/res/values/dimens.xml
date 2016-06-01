@@ -10,4 +10,6 @@
     <dimen name="item_font_size">16sp</dimen>
     <dimen name="cardview_elevation">4dp</dimen>
 
+    <dimen name="appbar_height">256dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
 </resources>
