@@ -12,6 +12,6 @@ public class RandomGenerator {
      * @return
      */
     public static int getRandomInt(int validLeft, int invalidRight) {
-        return (int)Math.round(Math.random() * (invalidRight - validLeft) + validLeft);
+        return (int)(Math.random() * (invalidRight - validLeft) + validLeft);
     }
 }

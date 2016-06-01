@@ -20,7 +20,7 @@
             android:id="@+id/news_collasping_toolbar_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:expandedTitleMarginStart="48dp"
+            app:expandedTitleMarginStart="24dp"
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             tools:text="collapseToolbarLayout">
 
@@ -29,8 +29,9 @@
                 android:id="@+id/news_block_bg"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/material_blue_500"
+                android:fitsSystemWindows="false"
                 android:scaleType="centerCrop"
+                android:src="@color/news_background_lighter_gray"
                 app:layout_collapseMode="parallax"
                 app:layout_collapseParallaxMultiplier="0.7" />
 

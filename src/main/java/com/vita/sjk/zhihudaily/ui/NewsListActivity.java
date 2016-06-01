@@ -117,13 +117,17 @@ public class NewsListActivity extends BaseActivity
          * swipeRefreshLayout
          */
         swipeRefreshLayout.setColorSchemeResources(
-                android.R.color.holo_red_light,
-                android.R.color.holo_orange_light,
-                R.color.yellow,
-                android.R.color.holo_green_light,
-                R.color.cyan,
-                android.R.color.holo_blue_light,
-                R.color.purple
+                R.color.material_red,
+                R.color.material_orange,
+                R.color.material_yellow,
+                R.color.material_green,
+                R.color.material_cyan,
+                R.color.material_blue,
+                R.color.material_purple,
+                R.color.material_light_blue,
+                R.color.material_blue_gray,
+                R.color.material_gray,
+                R.color.material_brown
         );
         swipeRefreshLayout.setOnRefreshListener(this);
 

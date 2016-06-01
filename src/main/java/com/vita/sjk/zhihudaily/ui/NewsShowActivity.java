@@ -17,6 +17,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.method.ScrollingMovementMethod;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.ImageView;
@@ -54,7 +55,7 @@ public class NewsShowActivity extends BaseActivity {
 
     CollapsingToolbarLayout news_collasping_toolbar_layout;
     Toolbar news_toolbar;
-    NestedScrollView news_scroll_view;
+    NestedScrollView news_nested_scroll_view;
     TextView news_content_text;
 
     private String html_body;
@@ -68,8 +69,15 @@ public class NewsShowActivity extends BaseActivity {
 
     private int[] bg_colors = {
             R.color.material_red,
+            R.color.material_orange,
+            R.color.material_green,
+            R.color.material_cyan,
             R.color.material_blue,
-            R.color.material_green
+            R.color.material_purple,
+            R.color.material_light_blue,
+            R.color.material_blue_gray,
+            R.color.material_gray,
+            R.color.material_brown
     };
 
     /**
@@ -121,22 +129,27 @@ public class NewsShowActivity extends BaseActivity {
      * 初始化控件
      */
     private void initViews() {
-        /**
-         * 要显示标题的话，必须设置在collapsingToolbarLayout上，而不是toolBar上
-         */
+        int rand = RandomGenerator.getRandomInt(0, bg_colors.length);
+        news_nested_scroll_view = (NestedScrollView) findViewById(R.id.news_nested_scroll_view);
+        news_content_text = (TextView) findViewById(R.id.news_content_text);
+        ImageView news_block_bg = (ImageView) findViewById(R.id.news_block_bg);
         news_collasping_toolbar_layout = (CollapsingToolbarLayout) findViewById(R.id.news_collasping_toolbar_layout);
-        news_collasping_toolbar_layout.setTitle(news_title);
+        news_toolbar = (Toolbar) findViewById(R.id.news_toolbar);
 
         /**
          * 随机设置一种颜色，感觉会好一点
          */
-        ImageView news_block_bg = (ImageView) findViewById(R.id.news_block_bg);
-        news_block_bg.setBackgroundColor(bg_colors[RandomGenerator.getRandomInt(0, bg_colors.length)]);
+        news_block_bg.setImageResource(bg_colors[rand]);
+
+        /**
+         * 要显示标题的话，必须设置在collapsingToolbarLayout上，而不是toolBar上
+         */
+        news_collasping_toolbar_layout.setTitle(news_title);
+        news_collasping_toolbar_layout.setContentScrimResource(bg_colors[rand]);
 
         /**
          * 添加后退导航按钮（原生，不用自己找drawable定义）
          */
-        news_toolbar = (Toolbar) findViewById(R.id.news_toolbar);
         setSupportActionBar(news_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         news_toolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -148,12 +161,28 @@ public class NewsShowActivity extends BaseActivity {
                 onBackPressed();
             }
         });
+        news_toolbar.setOnTouchListener(new View.OnTouchListener() {
+            long lastTime = 0;
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    long curTime = System.currentTimeMillis();
+                    if (curTime - lastTime < Constants.DOUBLE_CLICK_INTERVAL) {
+                        /**
+                         * 双击回到新闻的顶部
+                         */
+                        news_nested_scroll_view.smoothScrollTo(0, 0);
+                    } else {
+                        lastTime = curTime;
+                    }
+                }
+                return false;
+            }
+        });
 
-        news_content_text = (TextView) findViewById(R.id.news_content_text);
         news_content_text.setMovementMethod(LinkMovementMethod.getInstance());
         //news_content_text.setMovementMethod(ScrollingMovementMethod.getInstance());
 
-        news_scroll_view = (NestedScrollView) findViewById(R.id.news_nested_scroll_view);
         /**
          * 记得设置scrollvaie的滚动记录，提升用户体验
          */
