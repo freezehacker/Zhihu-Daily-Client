@@ -141,6 +141,12 @@ public class LatestListAdapter extends RecyclerView.Adapter<LatestListAdapter.La
         void onItemClick(View v, int position);
     }
 
+    /**
+     * RecyclerView实现上拉加载更多
+     */
+    public interface OnLoadMoreListener {
+        void onLoadMore();
+    }
 
     /**
      * RecyclerView中的列表项的图片下载任务

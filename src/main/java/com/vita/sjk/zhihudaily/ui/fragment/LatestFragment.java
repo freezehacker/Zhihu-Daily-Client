@@ -25,14 +25,31 @@ import com.vita.sjk.zhihudaily.ui.NewsShowActivity;
 import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
  * Created by sjk on 2016/6/2.
  */
 public class LatestFragment extends BaseFragment
-        implements SwipeRefreshLayout.OnRefreshListener, LatestListAdapter.OnItemClickListener {
+        implements SwipeRefreshLayout.OnRefreshListener,
+        LatestListAdapter.OnItemClickListener,
+        LatestListAdapter.OnLoadMoreListener {
 
+    /**
+     * 表示往前多少天
+     * 这个用来计算出日期，从而推算出应该加载以前哪一天的新闻
+     */
+    private int daysBefore = 0;
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+
+    /**
+     * 滑动组件
+     */
+    private int lastVisibleItemPos = 0;
+    private LinearLayoutManager linearLayoutManager;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -56,6 +73,7 @@ public class LatestFragment extends BaseFragment
 
     /**
      * 构造该Fragment的一个实例
+     *
      * @return
      */
     public static LatestFragment newInstance() {
@@ -65,6 +83,7 @@ public class LatestFragment extends BaseFragment
 
     /**
      * 初始化view
+     *
      * @param inflater
      * @param container
      * @param savedInstanceState
@@ -81,6 +100,7 @@ public class LatestFragment extends BaseFragment
 
     /**
      * 在这里定义view的行为，分担onCreateView的压力
+     *
      * @param savedInstanceState
      */
     @Override
@@ -118,20 +138,25 @@ public class LatestFragment extends BaseFragment
          * recyclerView部分的配置
          */
         //recyclerView.setHasFixedSize(true); // 据说是提高性能
-        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
-        llm.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(llm);
+        linearLayoutManager = new LinearLayoutManager(getActivity());
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         // 这里实现"上拉加载更多"（未实现）
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
+                /**
+                 * 当滑动到最后一个item的时候，自动加载更多
+                 */
+                if (newState == RecyclerView.SCROLL_STATE_IDLE && lastVisibleItemPos + 1 == adapter.getItemCount()) {
+                    httpLoadMoreData();
+                }
             }
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
+                lastVisibleItemPos = linearLayoutManager.findLastVisibleItemPosition();
             }
         });
     }
@@ -186,6 +211,48 @@ public class LatestFragment extends BaseFragment
     }
 
     /**
+     * 根据从今天开始不断往后的日期，请求更多的（旧）新闻数据
+     */
+    private void httpLoadMoreData() {
+        /**
+         * 根据日期推算出字符串
+         */
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -daysBefore);
+        ++daysBefore;
+        String dateStr = simpleDateFormat.format(calendar.getTime());
+        LogUtils.log("加载日期为:" + dateStr);   // 打印一下
+
+        /**
+         * 发起网络请求
+         */
+        String urlString = String.format(API.GET_NEWS_AT_DATE, dateStr);
+        HttpUtils.httpGetJsonString(urlString, new HttpUtils.HttpCallback() {
+            @Override
+            public void onFinish(String jsonString) {
+                LogUtils.log("请求成功!");
+                ResponseLatest response = new Gson().fromJson(jsonString, ResponseLatest.class);
+                List<Story> extraStories = response.getStories();
+                final int positionStart = storyList.size();
+                final int extraSize = extraStories.size();
+                storyList.addAll(extraStories);
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        adapter.notifyItemRangeInserted(positionStart, extraSize);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+
+            }
+        });
+    }
+
+    /**
      * 下拉刷新的回调
      */
     @Override
@@ -219,4 +286,11 @@ public class LatestFragment extends BaseFragment
         startActivity(intent);
     }
 
+    /**
+     * “上拉加载更多”的回调
+     */
+    @Override
+    public void onLoadMore() {
+
+    }
 }

@@ -2,11 +2,11 @@ package com.vita.sjk.zhihudaily.api;
 
 /**
  * Created by sjk on 2016/5/27.
- *
+ * <p>
  * 知乎的api列表，都是别人抓取来的
  * 全部使用get请求
  * 参考网址：
- *      https://github.com/izzyleung/ZhihuDailyPurify/wiki
+ * https://github.com/izzyleung/ZhihuDailyPurify/wiki
  */
 public class API {
 
@@ -65,4 +65,13 @@ public class API {
      * 根据栏目id，查看一系列新闻
      */
     public static final String GET_NEWS_BY_SECTION = "http://news-at.zhihu.com/api/3/section/%s";
+
+    /**
+     * 栏目的名字
+     * 下标对应名称，因为type在json字符串中是int而不是String，比如栏目“2”就是“游戏”
+     * 注意，栏目0和1是不存在的
+     * 可以让用户定制自己喜欢的sections
+     */
+    public static final String[] SECTION = new String[]{"", "", "游戏", "电影", "设计", "公司",
+            "财经", "音乐", "体育", "动漫", "互联网", "趣事", "推荐", "心理学"};
 }

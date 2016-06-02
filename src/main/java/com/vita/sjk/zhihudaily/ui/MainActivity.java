@@ -1,6 +1,6 @@
 package com.vita.sjk.zhihudaily.ui;
 
-import android.app.FragmentTransaction;
+import android.support.v4.app.FragmentTransaction;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -125,8 +125,8 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         /**
          * 一开始把第一个RadioButton选上，这样可以初始化第一个fragment
          */
-        btn_latest.setChecked(true);
-        toolbarText.setText(titles[0]);
+        btn_section.setChecked(true);
+        toolbarText.setText(titles[1]);
     }
 
     /**
@@ -148,7 +148,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
      */
     @Override
     public void onCheckedChanged(RadioGroup group, int checkedId) {
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         hideAllFragments(transaction);
         switch (checkedId) {
             case R.id.rb_latest:

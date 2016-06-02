@@ -1,13 +1,14 @@
 package com.vita.sjk.zhihudaily.bean;
 
-import android.os.Parcelable;
-
 import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by sjk on 2016/5/27.
- * 新闻类，指一条新闻
+ *
+ * 新闻类bean
+ * 最关键的实体类，因为最终要展示给用户看!
+ * 根据API，只能通过新闻id来get到该新闻的所有信息，尤其是body字段，记录了要展示的一切
  */
 public class News implements Serializable {
 
