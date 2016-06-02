@@ -19,16 +19,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppThemeWithoutActionBar">
 
-        <activity
-            android:name=".ui.NewsListActivity"
-            android:label="@string/news_list_latest">
+        <activity android:name=".ui.NewsShowActivity"></activity>
+
+        <activity android:name=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".ui.NewsShowActivity"></activity>
 
     </application>
 

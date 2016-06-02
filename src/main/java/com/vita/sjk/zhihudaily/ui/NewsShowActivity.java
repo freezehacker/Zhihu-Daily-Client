@@ -14,14 +14,9 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
-import android.text.method.ScrollingMovementMethod;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.webkit.WebView;
 import android.widget.ImageView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -35,17 +30,11 @@ import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 import com.vita.sjk.zhihudaily.utils.RandomGenerator;
 
-import org.w3c.dom.Text;
 import org.xml.sax.XMLReader;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -59,7 +48,6 @@ public class NewsShowActivity extends BaseActivity {
     TextView news_content_text;
 
     private String html_body;
-    private Spanned html_spanned;
     private NewsImageGetter mNewsImageGetter = null;
     private NewsTagHandler mNewsTagHandler = null;
 
@@ -211,12 +199,11 @@ public class NewsShowActivity extends BaseActivity {
                 News news = gson.fromJson(jsonString, News.class);
 
                 html_body = news.getBody(); // 获取html的内容，赋给'全局'变量
-                html_spanned = Html.fromHtml(html_body, mNewsImageGetter, null);    // 只赋值一次，不知道可不可以
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        news_content_text.setText(html_spanned);
+                        news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
                     }
                 });
             }
@@ -340,10 +327,6 @@ public class NewsShowActivity extends BaseActivity {
             /**
              * 关键：再给TextView设置一次显示，相当于更新TextView内容
              */
-            //news_content_text.requestLayout();
-            //news_content_text.setText(news_content_text.getText());
-            //news_content_text.invalidate();
-            //news_content_text.setText(html_spanned);
             news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
         }
     }

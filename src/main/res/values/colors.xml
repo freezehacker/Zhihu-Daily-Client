@@ -21,4 +21,9 @@
     <color name="material_brown">#795548</color>
     <color name="material_blue_gray">#607d8b</color>
     <color name="material_gray">#9e9e9e</color>
+
+    <color name="divider_gray">#dddddd</color>
+
+    <color name="text_checked">@color/material_blue_gray</color>
+    <color name="text_unchecked">@android:color/transparent</color>
 </resources>

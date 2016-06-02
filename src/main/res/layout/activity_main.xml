@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.MainActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/global_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentTop="true">
+
+        <TextView
+            android:id="@+id/toolbar_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="18sp"
+            android:textColor="#de000000"
+            android:textStyle="bold"
+            tools:text="title" />
+    </android.support.v7.widget.Toolbar>
+
+    <RadioGroup
+        android:id="@+id/radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:elevation="5dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rb_latest"
+            style="@style/RadioButtonStyle"
+            android:text="最新" />
+
+        <RadioButton
+            android:id="@+id/rb_section"
+            style="@style/RadioButtonStyle"
+            android:text="专栏" />
+
+        <RadioButton
+            android:id="@+id/rb_collect"
+            style="@style/RadioButtonStyle"
+            android:text="收藏" />
+    </RadioGroup>
+
+    <ImageView
+        android:id="@+id/nav_divider"
+        android:layout_width="match_parent"
+        android:layout_height="2px"
+        android:layout_above="@id/radio_group"
+        android:background="@color/divider_gray"
+        android:scaleType="fitXY" />
+
+    <FrameLayout
+        android:id="@+id/fragment_switcher"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/nav_divider"
+        android:layout_below="@id/global_toolbar" />
+
+</RelativeLayout>
