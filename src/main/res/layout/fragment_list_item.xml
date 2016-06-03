@@ -22,6 +22,7 @@
         android:orientation="horizontal">
 
         <LinearLayout
+            android:id="@+id/f_item_text_block"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"

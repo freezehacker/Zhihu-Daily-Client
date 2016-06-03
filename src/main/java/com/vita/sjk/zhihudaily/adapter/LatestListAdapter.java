@@ -59,13 +59,6 @@ public class LatestListAdapter extends RecyclerView.Adapter<LatestListAdapter.La
         mOnItemClickListener = listener;
     }
 
-    /**
-     * 该方法是重用View，所以不会一直调用
-     * 当有n个item时，该函数只会回调m（m << n）次，比如测试n=20，那大概m=8
-     * @param parent
-     * @param viewType
-     * @return
-     */
     @Override
     public LatestListViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         //LogUtils.log("create");
@@ -73,13 +66,7 @@ public class LatestListAdapter extends RecyclerView.Adapter<LatestListAdapter.La
         return new LatestListViewHolder(view);
     }
 
-    /**
-     * 该方法会一直调用，具体地说，哪个item被显示在屏幕上，就调用哪个item的这个回调
-     * 要设置文字的颜色，等等，比如已经浏览过了就得设置成灰色文字
-     * 而且要考虑异步回调的问题
-     * @param holder
-     * @param position
-     */
+
     @Override
     public void onBindViewHolder(LatestListViewHolder holder, final int position) {
         //LogUtils.log("bind " + position);
