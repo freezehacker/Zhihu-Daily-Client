@@ -4,13 +4,11 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +18,6 @@ import android.widget.TextView;
 
 import com.vita.sjk.zhihudaily.R;
 import com.vita.sjk.zhihudaily.bean.Story;
-import com.vita.sjk.zhihudaily.utils.BitmapUtils;
 import com.vita.sjk.zhihudaily.utils.CacheUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 
@@ -31,22 +28,29 @@ import java.util.List;
 
 /**
  * Created by sjk on 2016/6/3.
- * <p>
- * 继承View或者Fragment，这里选择Fragment试试
- * 关键：根据定制（抽象）的程度来编写
+ * <p/>
+ * 封装好的一个RecyclerView（其实还包括一个SwipeRefreshLayout），功能有：
+ * 1.上拉加载
+ * 2.下拉刷新
+ * 3.点击跳转
+ * 这3个功能都是用到的时候才定义具体的行为，所以定制程度不会太高，抽象得更好了
+ * 因为很多地方要用到这个控件，所以封装起来以复用
+ * 注意因为包括不止一个View（准确来说有两个），所以这里继承的是LinearLayout而不是View
  */
-public class TemplateRecycler extends Fragment {
+public class TemplateRecyclerView extends LinearLayout {
 
-    public static final int RESOURCE_LAYOUT_ID = R.layout.fragment_list_item;   // 该fragment使用的资源文件
+    public static final int ITEM_LAYOUT_ID = R.layout.fragment_list_item;   // 该View中的RecyclerView用到的item样式
 
-    private RecyclerView mRecyclerView;
+    private Context mContext;
+
+    public RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
-    private SwipeRefreshLayout mSwipeRefreshLayout;
+    public SwipeRefreshLayout mSwipeRefreshLayout;
     private TemplateAdapter adapter;
 
     private int lastVisibleItemPos = 0;
 
-    private List<Story> mStories;
+    private List<Story> mStories = null;
 
     /**
      * 3种监听器，对应用户对RecyclerView的3种操作
@@ -55,10 +59,22 @@ public class TemplateRecycler extends Fragment {
     private OnLoadMoreListener mOnLoadMoreListener = null;
     private OnDataRefreshListener mOnDataRefreshListener = null;
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.template_recycler, container, false);
+    /**
+     * 注意，这个函数是当在xml中定义控件的时候立刻执行的
+     * 所以，如果是后续的一些绑定监听器等的动作，不能在这里写，只能在后续中写|添加
+     *
+     * @param context
+     * @param attrs
+     */
+    public TemplateRecyclerView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        mContext = context;
+
+        initializeViews();
+    }
+
+    private void initializeViews() {
+        View view = LayoutInflater.from(mContext).inflate(R.layout.template_recycler, this);    // 疑问
         mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
         mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh_layout);
         mSwipeRefreshLayout.setColorSchemeResources(
@@ -78,38 +94,21 @@ public class TemplateRecycler extends Fragment {
         /**
          * 为RecyclerView默认样式，不用每次都要去定义
          */
-        mLinearLayoutManager = new LinearLayoutManager(getActivity());
+        mLinearLayoutManager = new LinearLayoutManager(mContext);
         mLinearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         //mRecyclerView.setHasFixedSize(true);  //提高性能
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-
-        return view;
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
 
-        /**
-         * "下拉刷新"监听器
-         * （BTW，绑定用户要求的监听器之前，最好先判断一下用户有没有绑定，如果没有就不用设置了）
-         */
-        if (mOnDataRefreshListener != null) {
-            mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                @Override
-                public void onRefresh() {
-                    /**
-                     * 回调用户定义的"刷新"操作（接口的定义：此处定义回调时机，具体回调什么内容由用户定义）
-                     */
-                    mOnDataRefreshListener.onDataRefresh();
-                }
-            });
-        }
-
-        /**
-         * "上拉加载"监听器
-         */
+    /**
+     * 给用户调用，绑定一个"上拉加载"监听器
+     *
+     * @param listener
+     */
+    public void setOnLoadMoreListener(OnLoadMoreListener listener) {
+        mOnLoadMoreListener = listener;
         if (mOnLoadMoreListener != null) {
             mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                 /**
@@ -141,31 +140,26 @@ public class TemplateRecycler extends Fragment {
                 }
             });
         }
-
-        /**
-         * 本来应该是第一次进入就刷新界面的
-         * 但是刷新界面的操作应该由用户定义
-         * 这里不写
-         * 定义2种操作接口（具体是3个函数，见下面）就好，一个增加，一个刷新，参数都是dataSource
-         */
     }
 
     /**
-     * 给用户调用，绑定一个"上拉加载"操作
-     *
-     * @param listener
-     */
-    public void setOnLoadMoreListener(OnLoadMoreListener listener) {
-        mOnLoadMoreListener = listener;
-    }
-
-    /**
-     * 给用户调用，绑定一个"下拉刷新"操作
+     * 给用户调用，绑定一个"下拉刷新"监听器
      *
      * @param listener
      */
     public void setOnDataRefreshListener(OnDataRefreshListener listener) {
         mOnDataRefreshListener = listener;
+        if (mOnDataRefreshListener != null) {
+            mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    /**
+                     * 回调用户定义的"刷新"操作（接口的定义：此处定义回调时机，具体回调什么内容由用户定义）
+                     */
+                    mOnDataRefreshListener.onDataRefresh();
+                }
+            });
+        }
     }
 
     /**
@@ -178,6 +172,9 @@ public class TemplateRecycler extends Fragment {
      * @param listener
      */
     public void setOnItemClickListener(TemplateAdapter.OnItemClickListener listener) {
+        if (adapter == null) {
+            throw new IllegalStateException("Adapter还没有创建!");
+        }
         adapter.setOnItemClickListener(listener);
     }
 
@@ -196,42 +193,42 @@ public class TemplateRecycler extends Fragment {
     }
 
     /**
-     * 给用户调用的
-     * 第一次载入数据，需要根据数据源，更新整个列表。adapter需要被创建
-     * @param newStoryList
+     * 用户调用
+     * 配置一个adapter，主要目的是把数据源跟外部数据源等同起来
+     * 注意，此举是改变数据源的引用的
+     * 所以最好只调用一次
      */
-    public void loadDataFirstly(List<Story> newStoryList) {
-        mStories = newStoryList;
-        adapter = new TemplateAdapter(getActivity(), RESOURCE_LAYOUT_ID, newStoryList, mRecyclerView);
+    public void buildAdapterWithNewRef(List<Story> outsideList) {
+        mStories = outsideList;
+        adapter = new TemplateAdapter(mContext, ITEM_LAYOUT_ID, mStories, mRecyclerView);
         mRecyclerView.setAdapter(adapter);
     }
 
     /**
-     * 给用户调用的
-     * 后续的刷新数据。根据数据源，更新整个列表
-     * @param newStoryList
+     * 用户调用
+     * 刷新整个adapter，对应了刷新
      */
-    public void loadData(List<Story> newStoryList) {
-        mStories.clear();
-        mStories.addAll(newStoryList);
+    public void refreshAdapter() {
         adapter.notifyDataSetChanged();
+        LogUtils.log("refreshAdapter: " + adapter.getItemCount());
     }
 
     /**
-     * 给用户调用的
-     * 根据数据源，增加（后接）一个列表
-     * @param moreStoryList
+     * 用户调用
+     * 刷新局部adapter，对应增加数据
+     *
+     * @param from  从第几个child开始
+     * @param count 刷新多少个child
      */
-    public void addData(List<Story> moreStoryList) {
-        int originSize = mStories.size();
-        mStories.addAll(moreStoryList);
-        adapter.notifyItemRangeInserted(originSize, moreStoryList.size());
+    public void refreshAdapter(int from, int count) {
+        adapter.notifyItemRangeInserted(from, count);
+        LogUtils.log("refreshAdapter: " + adapter.getItemCount());
     }
 
     /**
      * 自定义Adapter
      */
-    static class TemplateAdapter extends RecyclerView.Adapter<TemplateAdapter.TemplateViewHolder> {
+    public static class TemplateAdapter extends RecyclerView.Adapter<TemplateAdapter.TemplateViewHolder> {
 
         OnItemClickListener mOnItemClickListener = null;
         List<Story> mStoryList;
@@ -344,7 +341,7 @@ public class TemplateRecycler extends Fragment {
         }
 
         // 点击item的监听器和其回调
-        interface OnItemClickListener {
+        public interface OnItemClickListener {
             void onItemClick(View view, int position);
         }
 

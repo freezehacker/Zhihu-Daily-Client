@@ -74,6 +74,8 @@ public class NewsShowActivity extends BaseActivity {
      */
     private Set<NewsImageTask> taskSet;
 
+    private boolean isError = false;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -91,14 +93,21 @@ public class NewsShowActivity extends BaseActivity {
          */
         if (news_id == Constants.NEWS_ID_INVALID) {
             LogUtils.log("Intent携带信息出错");
+            isError = true;
+            /**
+             * 可否在这里finish?
+             */
             finish();
         }
 
-        initViews();
-
-        initVars();
-
-        callHttpToShowNews(news_id);
+        /**
+         * 没有出错才能继续进行，如果出错呢？能不能在onCreate里直接finish()?
+         */
+        if (!isError) {
+            initViews();
+            initVars();
+            callHttpToShowNews(news_id);
+        }
     }
 
     @Override

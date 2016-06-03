@@ -19,7 +19,7 @@ public class Story {
      */
 
     private int type;
-    private int id;
+    private long id;
     private String ga_prefix;
     private String title;
     private List<String> images;
@@ -32,11 +32,11 @@ public class Story {
         this.type = type;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

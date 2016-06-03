@@ -125,8 +125,8 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         /**
          * 一开始把第一个RadioButton选上，这样可以初始化第一个fragment
          */
-        btn_section.setChecked(true);
-        toolbarText.setText(titles[1]);
+        btn_collect.setChecked(true);
+        toolbarText.setText(titles[2]);
     }
 
     /**
