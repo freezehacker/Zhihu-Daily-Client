@@ -26,12 +26,12 @@ public class CacheUtils {
     /**
      * 分配给LruCache的缓存，大概有32M
       */
-    public static final long ALLOCATE_MEMORY = Runtime.getRuntime().maxMemory() / 8;
+    public static final long ALLOCATE_MEMORY = Runtime.getRuntime().maxMemory() / 8;    // 32M
 
     /**
      * 分配给DiskLruCache的缓存，设成50M
      */
-    public static final long ALLOCATE_DISK_MEMORY = 50 * 1024 * 1024;
+    public static final long ALLOCATE_DISK_MEMORY = 100 * 1024 * 1024;  // 100M
 
     /**
      * 缓存bitmap文件的文件夹的名字
@@ -192,16 +192,11 @@ public class CacheUtils {
      * worker线程
      */
     public static void clearDiskCache() {
-        ThreadPoolUtils.getInstance().execute(new Runnable() {
-            @Override
-            public void run() {
-                File dir = new File(diskCachePathString);
-                if (!dir.exists()) return;
-                for (File file: dir.listFiles()) {
-                    file.delete();
-                }
-            }
-        });
+        File dir = new File(diskCachePathString);
+        if (!dir.exists()) return;
+        for (File file: dir.listFiles()) {
+            file.delete();
+        }
     }
 
     /**

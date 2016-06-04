@@ -5,6 +5,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.FrameLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -17,6 +19,7 @@ import com.vita.sjk.zhihudaily.ui.fragment.BaseFragment;
 import com.vita.sjk.zhihudaily.ui.fragment.CollectFragment;
 import com.vita.sjk.zhihudaily.ui.fragment.LatestFragment;
 import com.vita.sjk.zhihudaily.ui.fragment.SectionFragment;
+import com.vita.sjk.zhihudaily.utils.CacheUtils;
 
 /**
  * Created by sjk on 2016/6/2.
@@ -125,8 +128,8 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         /**
          * 一开始把第一个RadioButton选上，这样可以初始化第一个fragment
          */
-        btn_collect.setChecked(true);
-        toolbarText.setText(titles[2]);
+        btn_latest.setChecked(true);
+        toolbarText.setText(titles[0]);
     }
 
     /**
@@ -214,5 +217,25 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         } else {
             finish();
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.menu_main_delete:
+                CacheUtils.clearDiskCache();
+                Toast.makeText(MainActivity.this, "成功删除本地缓存!", Toast.LENGTH_SHORT).show();
+                break;
+            default:
+                break;
+        }
+        return true;
     }
 }

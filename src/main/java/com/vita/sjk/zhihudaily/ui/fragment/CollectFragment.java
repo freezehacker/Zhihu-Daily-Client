@@ -29,20 +29,31 @@ import java.util.List;
  */
 public class CollectFragment extends BaseFragment {
 
-    TemplateRecyclerView recycler;
+    private TemplateRecyclerView recycler;
 
     /**
      * 数据源
      * 注意，外部数据源跟adapter的数据源最好是同一个对象！否则很难管理，也容易出错
      * 所以也不要改变引用的对象了
+     * 为了方便，一开始就new了
      */
-    List<Story> mStoryList = new ArrayList<>();
+    private List<Story> mStoryList = new ArrayList<>();
 
     public static CollectFragment newInstance() {
         CollectFragment ret = new CollectFragment();
         return ret;
     }
 
+    /**
+     * 这里作为一个例子，说明TemplateRecyclerView控件的用法，其实就是2个步骤：
+     * 1.先调用控件的buildAdapterWithNewRef，参数是一个数据源（这个数据源必须在主人fragment中已经new了，此后不改变引用的对象）
+     * 2.再为控件绑定3个监听器
+     *
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return
+     */
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -57,7 +68,6 @@ public class CollectFragment extends BaseFragment {
         recycler.setOnDataRefreshListener(new TemplateRecyclerView.OnDataRefreshListener() {
             @Override
             public void onDataRefresh() {
-                LogUtils.log("下拉刷新了");
                 requestNewData();
             }
         });
@@ -86,21 +96,20 @@ public class CollectFragment extends BaseFragment {
         /**
          * 一进来就请求网络
          */
-        LogUtils.log("准备发起请求");
         requestNewData();
     }
 
+    /**
+     * 操作：刷新列表
+     */
     private void requestNewData() {
         String urlString = API.GET_LATEST_NEWS;
         HttpUtils.httpGetJsonString(urlString, new HttpUtils.HttpCallback() {
             @Override
             public void onFinish(String jsonString) {
-                LogUtils.log("OK!内容有:" + jsonString.length() + "-->" + jsonString.substring(0, 100));
-
                 ResponseLatest response = new Gson().fromJson(jsonString, ResponseLatest.class);
                 mStoryList.clear();
                 mStoryList.addAll(response.getStories());   // 最好保持mStoryList引用的对象不变
-                LogUtils.log("current list size=" + mStoryList.size());
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -119,9 +128,11 @@ public class CollectFragment extends BaseFragment {
         });
     }
 
+    /**
+     * 操作：跳转到新闻显示的activity
+     * @param position
+     */
     private void jumpToAnotherActivity(int position) {
-        LogUtils.log("点击了第" + position + "个，准备跳转");
-
         Story story = mStoryList.get(position);
         Intent intent = new Intent(getActivity(), NewsShowActivity.class);
         intent.putExtra(Constants.NEWS_ID, story.getId());
@@ -130,13 +141,14 @@ public class CollectFragment extends BaseFragment {
         startActivity(intent);
     }
 
+    /**
+     * 操作：添加更多新闻
+     */
     private void requestMoreData() {
         String urlString = String.format(API.GET_NEWS_BY_THEME, 10);
         HttpUtils.httpGetJsonString(urlString, new HttpUtils.HttpCallback() {
             @Override
             public void onFinish(String jsonString) {
-                LogUtils.log("OK!\n" + jsonString.substring(0, 100));
-
                 ResponseSection response = new Gson().fromJson(jsonString, ResponseSection.class);
                 List<Story> moreList = response.getStories();
                 final int from = mStoryList.size();

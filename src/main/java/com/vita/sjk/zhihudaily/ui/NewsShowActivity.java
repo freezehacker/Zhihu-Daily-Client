@@ -29,6 +29,7 @@ import com.vita.sjk.zhihudaily.utils.CacheUtils;
 import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
 import com.vita.sjk.zhihudaily.utils.RandomGenerator;
+import com.vita.sjk.zhihudaily.utils.ThreadPoolUtils;
 
 import org.xml.sax.XMLReader;
 
@@ -36,6 +37,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 /**
  * Created by sjk on 2016/5/28.
@@ -48,6 +50,7 @@ public class NewsShowActivity extends BaseActivity {
     TextView news_content_text;
 
     private String html_body;
+    private Spanned html_spanned;
     private NewsImageGetter mNewsImageGetter = null;
     private NewsTagHandler mNewsTagHandler = null;
 
@@ -178,7 +181,6 @@ public class NewsShowActivity extends BaseActivity {
         });
 
         news_content_text.setMovementMethod(LinkMovementMethod.getInstance());
-        //news_content_text.setMovementMethod(ScrollingMovementMethod.getInstance());
 
         /**
          * 记得设置scrollvaie的滚动记录，提升用户体验
@@ -208,11 +210,13 @@ public class NewsShowActivity extends BaseActivity {
                 News news = gson.fromJson(jsonString, News.class);
 
                 html_body = news.getBody(); // 获取html的内容，赋给'全局'变量
+                //html_spanned = Html.fromHtml(html_body, mNewsImageGetter, null);
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
+                        html_spanned = Html.fromHtml(html_body, mNewsImageGetter, null);
+                        news_content_text.setText(html_spanned);
                     }
                 });
             }
@@ -226,49 +230,45 @@ public class NewsShowActivity extends BaseActivity {
     }
 
     /**
+     * 加上同步锁
+     * @param task
+     */
+    private synchronized void addTask(NewsImageTask task) {
+        taskSet.add(task);
+    }
+
+    /**
+     * 加上同步锁
+     * @param task
+     */
+    private synchronized void removeTask(NewsImageTask task) {
+        taskSet.remove(task);
+    }
+
+    /**
      * 实现接口，下载并缓存html中的图片
      */
     class NewsImageGetter implements Html.ImageGetter {
         @Override
         public Drawable getDrawable(String source) {
+            Drawable ret = null;
+            //Drawable ret = NewsShowActivity.this.getDrawable(R.drawable.no_pic);
             /**
              * 先从缓存中查看，如果有的话就直接返回，没有的话就先设置empty然后异步下载
              */
-            Bitmap bitmap = CacheUtils.loadFromMemory(source);
+            Bitmap bitmap = CacheUtils.load(source);
             if (bitmap != null) {
-                //LogUtils.log("memory");
-                Drawable drawable = BitmapUtils.bitmapToDrawable(getResources(), bitmap);
-                drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-                return drawable;
-            } else {
-                bitmap = CacheUtils.loadFromDisk(source);
-                if (bitmap != null) {
-                    //LogUtils.log("disk");
-                    Drawable drawable = BitmapUtils.bitmapToDrawable(getResources(), bitmap);
-                    /**
-                     * 这里设置drawable大小还是有疑问……
-                     * 究竟怎么适配屏幕
-                     * 还有图片的位置
-                     */
-                    drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-
-                    CacheUtils.dumpToMemory(source, bitmap);    // dump到内存中，更快
-
-                    return drawable;
-                } else {
-                    /**
-                     * 异步中的网络下载，下载之后会缓存
-                     */
-                    //LogUtils.log("download url: " + source);
-                    new NewsImageTask(source).execute(source);
-                    /**
-                     * 先在主线程返回null，也就是空图片
-                     * 这里可以改成是设置成一张准备好的empty图片
-                     */
-                    Drawable ret = NewsShowActivity.this.getDrawable(R.drawable.no_pic);
-                    return ret;
-                }
+                //LogUtils.log("图片在缓存中找到：" + source);
+                ret = BitmapUtils.bitmapToDrawable(getResources(), bitmap);
+                ret.setBounds(0, 0, ret.getIntrinsicWidth(), ret.getIntrinsicHeight());
+                return ret;
             }
+            //LogUtils.log("图片并没有在缓存中找到!：" + source + ", 线程id:" + Thread.currentThread().getId());
+            if (!taskSet.contains(source)) {
+                new NewsImageTask(source).executeOnExecutor(ThreadPoolUtils.getInstance(), source);
+                //new NewsImageTask(source).execute(source);
+            }
+            return ret;
         }
     }
 
@@ -290,25 +290,25 @@ public class NewsShowActivity extends BaseActivity {
             /**
              * 把任务加入集合加以管理
              */
-            taskSet.add(NewsImageTask.this);
+            addTask(NewsImageTask.this);
         }
 
         @Override
         protected Drawable doInBackground(String... params) {
-            String urlString = params[0];
+            LogUtils.log("即将下载图片url为：" + urlStr);
             Drawable ret = null;
             try {
                 /**
                  * 下载
                  */
-                URL url = new URL(urlString);
-                InputStream is = url.openStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(is);
+                Bitmap bitmap = BitmapFactory.decodeStream(new URL(urlStr).openStream());
+                /**
+                 * 这里要考虑是否耗时，尤其是当图片多起来的时候，每一次都要转化成drawable...
+                 */
                 ret = BitmapUtils.bitmapToDrawable(getResources(), bitmap);
-                /*
-                ret = Drawable.createFromStream(is, urlString);
-                ret.setBounds(0, 0, ret.getIntrinsicWidth(), ret.getIntrinsicHeight());
-                */
+
+                /*ret = Drawable.createFromStream(is, urlString);
+                ret.setBounds(0, 0, ret.getIntrinsicWidth(), ret.getIntrinsicHeight());*/
             } catch (Exception e) {
                 LogUtils.log(e.getMessage());
             } finally {
@@ -322,7 +322,7 @@ public class NewsShowActivity extends BaseActivity {
             /**
              * 完成后，从清单中删掉本任务
              */
-            taskSet.remove(NewsImageTask.this);
+            //taskSet.remove(NewsImageTask.this);
 
             /**
              * 缓存
@@ -335,8 +335,15 @@ public class NewsShowActivity extends BaseActivity {
 
             /**
              * 关键：再给TextView设置一次显示，相当于更新TextView内容
+             * 这里有毒……
              */
-            news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
+            //news_content_text.setText(html_spanned);
+            //news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
+            //news_content_text.invalidate();
+            //news_content_text.postInvalidate();
+            //news_content_text.requestLayout();
+            //news_content_text.invalidateDrawable(drawable);
+            LogUtils.log("刷新TextView，图片url为：" + urlStr);
         }
     }
 

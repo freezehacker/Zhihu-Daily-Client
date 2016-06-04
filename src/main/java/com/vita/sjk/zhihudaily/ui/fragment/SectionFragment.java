@@ -62,16 +62,22 @@ public class SectionFragment extends BaseFragment {
         super.onActivityCreated(savedInstanceState);
 
         /**
-         * 在这里就add，就不能懒加载吗？
+         * 步骤：
+         *  1.配置FragmentPagerAdapter
+         *  2.创建ViewPager
+         *  3.TabLayout绑定该ViewPager
          */
-        for (int i = 2; i <= 4; ++i) {
+        for (int i = 2; i <= 13; ++i) {
             subFragments.add(SectionSectionFragment.newInstance(i));
         }
         sectionPagerAdapter = new SectionPagerAdapter(getActivity().getSupportFragmentManager(), subFragments);
-
         viewPager.setAdapter(sectionPagerAdapter);
-
         tabLayout.setupWithViewPager(viewPager);
-        tabLayout.setTabMode(TabLayout.MODE_FIXED); // tabLayout样式
+        /**
+         * 对于TabLayout的TabMode，有两种常用的选择：
+         *  (1)MODE_SCROLLABLE：相当于wrap_content，适用于很多个tag
+         *  (2)MODE_FIXED：根据屏幕宽度平均分配，适用于大约4个以内的tag
+         */
+        tabLayout.setTabMode(TabLayout.MODE_SCROLLABLE); // tabLayout样式
     }
 }

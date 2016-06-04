@@ -210,7 +210,7 @@ public class TemplateRecyclerView extends LinearLayout {
      */
     public void refreshAdapter() {
         adapter.notifyDataSetChanged();
-        LogUtils.log("refreshAdapter: " + adapter.getItemCount());
+        //LogUtils.log("refreshAdapter: " + adapter.getItemCount());
     }
 
     /**
@@ -222,7 +222,7 @@ public class TemplateRecyclerView extends LinearLayout {
      */
     public void refreshAdapter(int from, int count) {
         adapter.notifyItemRangeInserted(from, count);
-        LogUtils.log("refreshAdapter: " + adapter.getItemCount());
+        //LogUtils.log("refreshAdapter: " + adapter.getItemCount());
     }
 
     /**

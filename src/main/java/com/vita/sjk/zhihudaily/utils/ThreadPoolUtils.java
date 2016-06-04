@@ -15,7 +15,7 @@ public class ThreadPoolUtils {
     /**
      * 线程池的类型，可自由改变
      */
-    private static ExecutorService mInstance = Executors.newFixedThreadPool(3);
+    private static ExecutorService mInstance = Executors.newFixedThreadPool(4);
 
     public static ExecutorService getInstance() {
         return mInstance;

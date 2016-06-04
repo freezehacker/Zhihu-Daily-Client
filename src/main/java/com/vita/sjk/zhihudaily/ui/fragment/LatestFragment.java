@@ -19,13 +19,16 @@ import com.vita.sjk.zhihudaily.R;
 import com.vita.sjk.zhihudaily.adapter.LatestListAdapter;
 import com.vita.sjk.zhihudaily.api.API;
 import com.vita.sjk.zhihudaily.bean.ResponseLatest;
+import com.vita.sjk.zhihudaily.bean.ResponseSection;
 import com.vita.sjk.zhihudaily.bean.Story;
 import com.vita.sjk.zhihudaily.constants.Constants;
 import com.vita.sjk.zhihudaily.ui.NewsShowActivity;
 import com.vita.sjk.zhihudaily.utils.HttpUtils;
 import com.vita.sjk.zhihudaily.utils.LogUtils;
+import com.vita.sjk.zhihudaily.view.TemplateRecyclerView;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -33,10 +36,7 @@ import java.util.List;
 /**
  * Created by sjk on 2016/6/2.
  */
-public class LatestFragment extends BaseFragment
-        implements SwipeRefreshLayout.OnRefreshListener,
-        LatestListAdapter.OnItemClickListener,
-        LatestListAdapter.OnLoadMoreListener {
+public class LatestFragment extends BaseFragment {
 
     /**
      * 表示往前多少天
@@ -46,29 +46,13 @@ public class LatestFragment extends BaseFragment
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
 
     /**
-     * 滑动组件
-     */
-    private int lastVisibleItemPos = 0;
-    private LinearLayoutManager linearLayoutManager;
-    private RecyclerView recyclerView;
-    private SwipeRefreshLayout swipeRefreshLayout;
-
-    /**
      * 数据源
      * 作为adapter参数的关键的列表
+     * 也是一开始就new了
      */
-    private List<Story> storyList = null;
+    private List<Story> mStoryList = new ArrayList<>();
 
-    /**
-     * RecyclerView的适配器
-     */
-    private LatestListAdapter adapter = null;
-
-    /**
-     * 用来记录哪些新闻（id唯一标记）已经被浏览过
-     * 浏览过的新闻，其标题会变成灰色，以提升用户体验
-     */
-    private SparseBooleanArray newsHasRead = null; // Integer-->Boolean
+    private TemplateRecyclerView recycler;
 
 
     /**
@@ -92,9 +76,32 @@ public class LatestFragment extends BaseFragment
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_latest, container, false);
-        recyclerView = (RecyclerView) view.findViewById(R.id.rv_latest);
-        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.srl_latest);
+        View view = inflater.inflate(R.layout.fragment_collect, container, false);
+        recycler = (TemplateRecyclerView) view.findViewById(R.id.collect_recycler);
+
+        recycler.buildAdapterWithNewRef(mStoryList);
+
+        recycler.setOnDataRefreshListener(new TemplateRecyclerView.OnDataRefreshListener() {
+            @Override
+            public void onDataRefresh() {
+                requestNewData();
+            }
+        });
+
+        recycler.setOnItemClickListener(new TemplateRecyclerView.TemplateAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                jumpToAnotherActivity(position);
+            }
+        });
+
+        recycler.setOnLoadMoreListener(new TemplateRecyclerView.OnLoadMoreListener() {
+            @Override
+            public void onLoadMore() {
+                requestMoreData();
+            }
+        });
+
         return view;
     }
 
@@ -107,190 +114,88 @@ public class LatestFragment extends BaseFragment
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        /**
-         * swipeRefreshLayout部分的配置
-         */
-        swipeRefreshLayout.setColorSchemeResources(
-                R.color.material_red,
-                R.color.material_orange,
-                R.color.material_yellow,
-                R.color.material_green,
-                R.color.material_cyan,
-                R.color.material_blue,
-                R.color.material_purple,
-                R.color.material_light_blue,
-                R.color.material_blue_gray,
-                R.color.material_gray,
-                R.color.material_brown
-        );
-        swipeRefreshLayout.setOnRefreshListener(this);
-
-        //实现刚开始进入的时候的自动刷新
-        swipeRefreshLayout.post(new Runnable() {
-            @Override
-            public void run() {
-                swipeRefreshLayout.setRefreshing(true);
-            }
-        });
-        onRefresh();
-
-        /**
-         * recyclerView部分的配置
-         */
-        //recyclerView.setHasFixedSize(true); // 据说是提高性能
-        linearLayoutManager = new LinearLayoutManager(getActivity());
-        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        // 这里实现"上拉加载更多"（未实现）
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                /**
-                 * 当滑动到最后一个item的时候，自动加载更多
-                 */
-                if (newState == RecyclerView.SCROLL_STATE_IDLE && lastVisibleItemPos + 1 == adapter.getItemCount()) {
-                    httpLoadMoreData();
-                }
-            }
-
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                lastVisibleItemPos = linearLayoutManager.findLastVisibleItemPosition();
-            }
-        });
-    }
-
-    private void buildAdapterAfterGettingData() {
-        adapter = new LatestListAdapter(getActivity(), R.layout.fragment_list_item, storyList, recyclerView);
-        adapter.setOnItemClickListener(this);
-        recyclerView.setAdapter(adapter);
-    }
-
-
-    /**
-     * 加载网络数据，始终获得最新的数据
-     * 在最初进入activity和下拉刷新的时候触发
-     */
-    private void httpRefreshData() {
-        HttpUtils.httpGetJsonString(API.GET_LATEST_NEWS, new HttpUtils.HttpCallback() {
-            @Override
-            public void onFinish(final String jsonString) {
-                LogUtils.log(jsonString);
-                ResponseLatest bean = new Gson().fromJson(jsonString, ResponseLatest.class);
-                storyList = bean.getStories();
-                /**
-                 * 需要运行在UI线程
-                 */
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        /**
-                         * 重新设置adapter
-                         * 疑问：不知道notifyDatasetChanged在RecyclerView中会不会失效？
-                         * 如果不会的话以后就用那个，不需要像下面那样每次都new一个
-                         */
-                        buildAdapterAfterGettingData();
-
-                        /**
-                         * 获得数据后，在视图上，停止刷新图标
-                         */
-                        if (swipeRefreshLayout.isRefreshing()) {
-                            swipeRefreshLayout.setRefreshing(false);
-                            Toast.makeText(getActivity(), "刷新成功", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String message) {
-                LogUtils.log("onError():\n" + message);
-            }
-        });
+        requestNewData();
     }
 
     /**
-     * 根据从今天开始不断往后的日期，请求更多的（旧）新闻数据
+     * 操作：刷新列表
      */
-    private void httpLoadMoreData() {
-        /**
-         * 根据日期推算出字符串
-         */
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, -daysBefore);
-        ++daysBefore;
-        String dateStr = simpleDateFormat.format(calendar.getTime());
-        LogUtils.log("加载日期为:" + dateStr);   // 打印一下
-
-        /**
-         * 发起网络请求
-         */
-        String urlString = String.format(API.GET_NEWS_AT_DATE, dateStr);
+    private void requestNewData() {
+        String urlString = API.GET_LATEST_NEWS;
         HttpUtils.httpGetJsonString(urlString, new HttpUtils.HttpCallback() {
             @Override
             public void onFinish(String jsonString) {
-                LogUtils.log("请求成功!");
                 ResponseLatest response = new Gson().fromJson(jsonString, ResponseLatest.class);
-                List<Story> extraStories = response.getStories();
-                final int positionStart = storyList.size();
-                final int extraSize = extraStories.size();
-                storyList.addAll(extraStories);
+                mStoryList.clear();
+                mStoryList.addAll(response.getStories());   // 最好保持mStoryList引用的对象不变
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        adapter.notifyItemRangeInserted(positionStart, extraSize);
+                        recycler.refreshAdapter();
+                        recycler.mSwipeRefreshLayout.setRefreshing(false);
+                        Toast.makeText(getActivity(), "刷新成功：最新", Toast.LENGTH_SHORT).show();
+                        /**
+                         * 往前天数归为0
+                         */
+                        daysBefore = 0;
                     }
                 });
             }
 
             @Override
             public void onError(String message) {
-
+                LogUtils.log(message);
             }
         });
     }
 
     /**
-     * 下拉刷新的回调
-     */
-    @Override
-    public void onRefresh() {
-        httpRefreshData();
-    }
-
-    /**
-     * ItemClick回调
-     * 即点击新闻，跳转到新闻显示的activity
+     * 操作：跳转到新闻显示的activity
      *
-     * @param v
-     * @param position 点击的item位置
+     * @param position
      */
-    @Override
-    public void onItemClick(View v, int position) {
+    private void jumpToAnotherActivity(int position) {
+        Story story = mStoryList.get(position);
         Intent intent = new Intent(getActivity(), NewsShowActivity.class);
-        /**
-         * 在根据id搜到正文之前，可以先传递标题、类型，让NewsShowActivity事先显示，像知乎那样
-         */
-        Story story = storyList.get(position);
-        long id = story.getId();
-        String title = story.getTitle();
-        int type = story.getType();
-
-        LogUtils.log("跳转到新闻的id=" + id);
-        intent.putExtra(Constants.NEWS_ID, id);
-        intent.putExtra(Constants.NEWS_TITLE, title);
-        intent.putExtra(Constants.NEWS_TYPE, type);
-
+        intent.putExtra(Constants.NEWS_ID, story.getId());
+        intent.putExtra(Constants.NEWS_TYPE, story.getType());
+        intent.putExtra(Constants.NEWS_TITLE, story.getTitle());
         startActivity(intent);
     }
 
     /**
-     * “上拉加载更多”的回调
+     * 操作：添加更多新闻
      */
-    @Override
-    public void onLoadMore() {
+    private void requestMoreData() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -daysBefore);
+        ++daysBefore;
+        String dateStr = simpleDateFormat.format(calendar.getTime());
+        LogUtils.log("请求日期str为: " + dateStr);
 
+        String urlString = String.format(API.GET_NEWS_AT_DATE, dateStr);
+        HttpUtils.httpGetJsonString(urlString, new HttpUtils.HttpCallback() {
+            @Override
+            public void onFinish(String jsonString) {
+                ResponseSection response = new Gson().fromJson(jsonString, ResponseSection.class);
+                List<Story> moreList = response.getStories();
+                final int from = mStoryList.size();
+                final int count = moreList.size();
+                mStoryList.addAll(moreList);   // 最好保持mStoryList引用的对象不变
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        recycler.refreshAdapter(from, count);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+
+            }
+        });
     }
 }
