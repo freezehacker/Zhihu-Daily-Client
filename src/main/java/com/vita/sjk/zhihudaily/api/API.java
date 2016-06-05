@@ -74,4 +74,13 @@ public class API {
      */
     public static final String[] SECTION = new String[]{"", "", "游戏", "电影", "设计", "公司",
             "财经", "音乐", "体育", "动漫", "互联网", "趣事", "推荐", "心理学"};
+
+    /**
+     * type=0用于标记带有body字段
+     */
+    public static final int TYPE_WITH_HTML_BODY = 0;
+    /**
+     * 相反type=1标记没有body字段的，只有一个share_url
+     */
+    public static final int TYPE_NO_HTML_BODY = 1;
 }

@@ -16,6 +16,9 @@ import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.view.MotionEvent;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -48,9 +51,9 @@ public class NewsShowActivity extends BaseActivity {
     Toolbar news_toolbar;
     NestedScrollView news_nested_scroll_view;
     TextView news_content_text;
+    WebView news_content_web_view;
 
     private String html_body;
-    private Spanned html_spanned;
     private NewsImageGetter mNewsImageGetter = null;
     private NewsTagHandler mNewsTagHandler = null;
 
@@ -87,6 +90,11 @@ public class NewsShowActivity extends BaseActivity {
 
         Intent intent = getIntent();
         news_id = intent.getLongExtra(Constants.NEWS_ID, Constants.NEWS_ID_INVALID);
+        /**
+         * 这里的type是指是否有html的body
+         * 有，就是0
+         * 没有，就是1
+         */
         news_type = intent.getIntExtra(Constants.NEWS_TYPE, Constants.NEWS_TYPE_INVALID);
         news_title = intent.getStringExtra(Constants.NEWS_TITLE);
 
@@ -126,12 +134,28 @@ public class NewsShowActivity extends BaseActivity {
     }
 
     /**
+     * 重写返回按键的方法
+     * 因为该activity要么是用webView显示，要么是用textView，所以要区分两种情况
+     * 用webView时，是在页面栈中操作
+     * 而用textView时，是在任务栈中操作
+     */
+    @Override
+    public void onBackPressed() {
+        if (news_content_web_view.getVisibility() == View.VISIBLE && news_content_web_view.canGoBack()) {
+            news_content_web_view.goBack();
+        } else {
+            finish();
+        }
+    }
+
+    /**
      * 初始化控件
      */
     private void initViews() {
         int rand = RandomGenerator.getRandomInt(0, bg_colors.length);
         news_nested_scroll_view = (NestedScrollView) findViewById(R.id.news_nested_scroll_view);
         news_content_text = (TextView) findViewById(R.id.news_content_text);
+        news_content_web_view = (WebView) findViewById(R.id.news_content_web_view);
         ImageView news_block_bg = (ImageView) findViewById(R.id.news_block_bg);
         news_collasping_toolbar_layout = (CollapsingToolbarLayout) findViewById(R.id.news_collasping_toolbar_layout);
         news_toolbar = (Toolbar) findViewById(R.id.news_toolbar);
@@ -158,11 +182,12 @@ public class NewsShowActivity extends BaseActivity {
                 /**
                  * 导航可以后退（一个activity）
                  */
-                onBackPressed();
+                finish();
             }
         });
         news_toolbar.setOnTouchListener(new View.OnTouchListener() {
             long lastTime = 0;
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -209,16 +234,50 @@ public class NewsShowActivity extends BaseActivity {
                 Gson gson = new Gson();
                 News news = gson.fromJson(jsonString, News.class);
 
-                html_body = news.getBody(); // 获取html的内容，赋给'全局'变量
-                //html_spanned = Html.fromHtml(html_body, mNewsImageGetter, null);
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        html_spanned = Html.fromHtml(html_body, mNewsImageGetter, null);
-                        news_content_text.setText(html_spanned);
-                    }
-                });
+                if (news.getType() == API.TYPE_WITH_HTML_BODY) {
+                    /**
+                     * 有html_body，需要去解析，然后用textView显示
+                     */
+                    html_body = news.getBody(); // 获取html的内容，赋给'全局'变量
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            news_content_web_view.setVisibility(View.GONE);
+                            news_content_text.setVisibility(View.VISIBLE);
+                            /**
+                             * 刷新TextView内容，只能这样刷新，别的什么invalidate都是无效的……
+                             */
+                            news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
+                        }
+                    });
+                } else {
+                    /**
+                     * 没有html_body，那就直接用一个webView显示
+                     */
+                    final String url = news.getShare_url();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            news_content_text.setVisibility(View.GONE);
+                            news_content_web_view.setVisibility(View.VISIBLE);
+                            news_content_web_view.setWebViewClient(new WebViewClient() {
+                                @Override
+                                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                                    view.loadUrl(url);
+                                    /**
+                                     * 返回值：
+                                     *  true，直接在本webView浏览
+                                     *  false，调用其他浏览器打开浏览
+                                     */
+                                    return true;
+                                }
+                            });
+                            news_content_web_view.getSettings().setJavaScriptEnabled(true);
+                            news_content_web_view.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                            news_content_web_view.loadUrl(url);
+                        }
+                    });
+                }
             }
 
             @Override
@@ -231,6 +290,7 @@ public class NewsShowActivity extends BaseActivity {
 
     /**
      * 加上同步锁
+     *
      * @param task
      */
     private synchronized void addTask(NewsImageTask task) {
@@ -239,6 +299,7 @@ public class NewsShowActivity extends BaseActivity {
 
     /**
      * 加上同步锁
+     *
      * @param task
      */
     private synchronized void removeTask(NewsImageTask task) {
@@ -337,12 +398,7 @@ public class NewsShowActivity extends BaseActivity {
              * 关键：再给TextView设置一次显示，相当于更新TextView内容
              * 这里有毒……
              */
-            //news_content_text.setText(html_spanned);
-            //news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
-            //news_content_text.invalidate();
-            //news_content_text.postInvalidate();
-            //news_content_text.requestLayout();
-            //news_content_text.invalidateDrawable(drawable);
+            news_content_text.setText(Html.fromHtml(html_body, mNewsImageGetter, null));
             LogUtils.log("刷新TextView，图片url为：" + urlStr);
         }
     }
