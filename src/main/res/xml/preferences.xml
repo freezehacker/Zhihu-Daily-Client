@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:layout="@layout/preference_category"
+        android:title="订阅主题：(勾选的会出现在专栏)">
+        <CheckBoxPreference
+            android:key="game"
+            android:layout="@layout/preference_item"
+            android:title="游戏" />
+        <CheckBoxPreference
+            android:key="movie"
+            android:layout="@layout/preference_item"
+            android:title="电影" />
+        <CheckBoxPreference
+            android:key="design"
+            android:layout="@layout/preference_item"
+            android:title="设计" />
+        <CheckBoxPreference
+            android:key="company"
+            android:layout="@layout/preference_item"
+            android:title="公司" />
+        <CheckBoxPreference
+            android:key="commercial"
+            android:layout="@layout/preference_item"
+            android:title="财经" />
+        <CheckBoxPreference
+            android:key="music"
+            android:layout="@layout/preference_item"
+            android:title="音乐" />
+        <CheckBoxPreference
+            android:key="sports"
+            android:layout="@layout/preference_item"
+            android:title="体育" />
+        <CheckBoxPreference
+            android:key="comic"
+            android:layout="@layout/preference_item"
+            android:title="动漫" />
+        <CheckBoxPreference
+            android:key="internet"
+            android:layout="@layout/preference_item"
+            android:title="互联网" />
+        <CheckBoxPreference
+            android:key="fun"
+            android:layout="@layout/preference_item"
+            android:title="趣事" />
+        <CheckBoxPreference
+            android:key="recommend"
+            android:layout="@layout/preference_item"
+            android:title="推荐" />
+        <CheckBoxPreference
+            android:key="psychology"
+            android:layout="@layout/preference_item"
+            android:title="心理学" />
+    </PreferenceCategory>
+</PreferenceScreen>

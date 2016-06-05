@@ -1,5 +1,7 @@
 package com.vita.sjk.zhihudaily.constants;
 
+import android.content.Context;
+
 /**
  * Created by sjk on 2016/5/28.
  */
@@ -31,4 +33,11 @@ public class Constants {
      * 双击的间隙定义，两次按下屏幕之间的间隙
      */
     public static final long DOUBLE_CLICK_INTERVAL = 500;
+
+    //----------------------------------------------------------------------------------
+    /**
+     * 偏好设置(包括订阅的专栏，等)放在SharedPreference内，下面是名称
+     */
+    public static final String SHARED_PREF_SETTINGS = "shared_pref_settings";
+    public static final int SHARED_PREF_SETTINGS_MODE = Context.MODE_PRIVATE;
 }

@@ -1,5 +1,6 @@
 package com.vita.sjk.zhihudaily.ui;
 
+import android.content.Intent;
 import android.support.v4.app.FragmentTransaction;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -229,9 +230,8 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.menu_main_delete:
-                CacheUtils.clearDiskCache();
-                Toast.makeText(MainActivity.this, "成功删除本地缓存!", Toast.LENGTH_SHORT).show();
+            case R.id.menu_main_settings:
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                 break;
             default:
                 break;

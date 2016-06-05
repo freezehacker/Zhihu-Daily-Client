@@ -13,12 +13,7 @@
 
         <TextView
             android:id="@+id/toolbar_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:textSize="18sp"
-            android:textColor="#de000000"
-            android:textStyle="bold"
+            style="@style/toolbar_font_style"
             tools:text="title" />
     </android.support.v7.widget.Toolbar>
 

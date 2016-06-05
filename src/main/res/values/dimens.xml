@@ -14,4 +14,7 @@
     <dimen name="fab_margin">16dp</dimen>
 
     <dimen name="f_item_image_size">64dp</dimen>
+
+    <dimen name="pref_item_marginLeftRight">8dp</dimen>
+    <dimen name="pref_item_marginTopDown">2dp</dimen>
 </resources>

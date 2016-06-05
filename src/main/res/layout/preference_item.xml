@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <!--必须使用系统的id-->
+    <TextView
+        android:id="@android:id/title"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_marginLeft="@dimen/pref_item_marginLeftRight"
+        android:layout_marginRight="@dimen/pref_item_marginLeftRight"
+        android:layout_height="wrap_content"
+        tools:text="电影" />
+
+    <CheckBox
+        android:id="@android:id/checkbox"
+        android:layout_marginRight="@dimen/pref_item_marginLeftRight"
+        android:layout_marginBottom="@dimen/pref_item_marginTopDown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</LinearLayout>
